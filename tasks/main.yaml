@@ -19,6 +19,7 @@
       - ca-certificates
       - gnupg
       - build-essential
+      - procps
     state: present
   when: ansible_os_family == "Debian"
   tags: packages
@@ -52,8 +53,10 @@
     name:
       - git
       - curl
+      - procps-ng
       - "@Development Tools"
     state: present
+    allowerasing: yes
   when: ansible_os_family == "RedHat"
   tags: packages
 
@@ -110,15 +113,24 @@
   tags: app
 
 - name: Arrêter une éventuelle instance serve précédente
-  shell: "pkill -f 'serve -s {{ app_dir }}/dist' || true"
+  shell: "pgrep -f 'serve -s {{ app_dir }}/dist' | xargs -r kill -15 2>/dev/null || true"
   changed_when: false
+  failed_when: false
   tags: service
 
-- name: Démarrer l'application avec serve (en arrière-plan)
-  shell: |
-    nohup serve -s {{ app_dir }}/dist -l {{ app_port }} > {{ app_dir }}/serve.log 2>&1 &
+- name: Démarrer l'application avec serve (fire-and-forget)
+  shell: "serve -s {{ app_dir }}/dist -l {{ app_port }}"
   args:
     chdir: "{{ app_dir }}"
+  async: 3600
+  poll: 0
+  tags: service
+
+- name: Attendre que serve écoute sur le port {{ app_port }}
+  wait_for:
+    port: "{{ app_port }}"
+    host: 127.0.0.1
+    timeout: 30
   tags: service
 
 - name: Afficher le statut du déploiement
