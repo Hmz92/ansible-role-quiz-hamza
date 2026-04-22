@@ -1,0 +1,42 @@
+---
+galaxy_info:
+  role_name: quiz_hamza
+  namespace: hamza
+  author: Hamza Assas
+  description: >-
+    Rôle Ansible portable déployant l'application Node.js quiz-ansible
+    depuis GitLab sur Debian/Ubuntu et RedHat/Rocky Linux.
+  license: MIT
+  min_ansible_version: "2.10"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Rocky
+      versions:
+        - "8"
+        - "9"
+
+  galaxy_tags:
+    - nodejs
+    - deployment
+    - webapp
+    - gitlab
+    - quiz
+    - ansible
+
+dependencies: []
+
+collections:
+  - community.general

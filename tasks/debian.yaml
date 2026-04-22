@@ -1,0 +1,32 @@
+---
+# Installation Node.js sur Debian / Ubuntu
+
+- name: (Debian) Mettre à jour le cache apt
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: packages
+
+- name: (Debian) Installer les paquets requis
+  apt:
+    name:
+      - git
+      - curl
+      - ca-certificates
+      - gnupg
+      - build-essential
+    state: present
+  tags: packages
+
+- name: (Debian) Télécharger et exécuter le script NodeSource
+  shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_version }} | bash -"
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+  tags: nodejs
+
+- name: (Debian) Installer Node.js et npm
+  apt:
+    name: nodejs
+    state: present
+    update_cache: yes
+  tags: nodejs

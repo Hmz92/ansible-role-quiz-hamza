@@ -1,0 +1,13 @@
+---
+# Dispatcher portable : exécute les tâches selon la famille d'OS
+
+- name: Inclure les tâches spécifiques à la distribution (Debian/Ubuntu)
+  include_tasks: debian.yaml
+  when: ansible_os_family == "Debian"
+
+- name: Inclure les tâches spécifiques à la distribution (RedHat/Rocky)
+  include_tasks: redhat.yaml
+  when: ansible_os_family == "RedHat"
+
+- name: Inclure les tâches communes de déploiement
+  include_tasks: deploy.yaml

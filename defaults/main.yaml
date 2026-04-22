@@ -1,0 +1,20 @@
+---
+# Variables par défaut du rôle ansible-role-quiz-hamza
+# (surchargeables depuis le playbook)
+
+# Dépôt source de l'application
+app_repo: "https://gitlab.com/ftutorials-labs/quiz-ansible.git"
+app_branch: main
+
+# Emplacement du code cloné
+app_dir: /opt/quiz-ansible
+
+# Port d'écoute de l'application
+app_port: 3000
+
+# Version de Node.js (NodeSource : 18.x, 20.x, 22.x, 23.x ...)
+node_version: "23.x"
+
+# Utilisateur et groupe propriétaires des fichiers
+app_user: root
+app_group: root
