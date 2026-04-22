@@ -1,7 +1,6 @@
 ---
 galaxy_info:
   role_name: quiz_hamza
-  namespace: hamza
   author: Hamza Assas
   description: >-
     Rôle Ansible portable déployant l'application Node.js quiz-ansible
@@ -20,10 +19,6 @@ galaxy_info:
         - bullseye
         - bookworm
     - name: EL
-      versions:
-        - "8"
-        - "9"
-    - name: Rocky
       versions:
         - "8"
         - "9"
