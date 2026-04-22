@@ -1,13 +1,131 @@
 ---
-# Dispatcher portable : exécute les tâches selon la famille d'OS
+# Rôle ansible-role-quiz-hamza — toutes les tâches dans un seul fichier
+# Portable : Debian/Ubuntu (apt) et RedHat/Rocky (dnf)
 
-- name: Inclure les tâches spécifiques à la distribution (Debian/Ubuntu)
-  include_tasks: debian.yaml
+# ====== DEBIAN / UBUNTU ======
+
+- name: (Debian) Mettre à jour le cache apt
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
   when: ansible_os_family == "Debian"
+  tags: packages
 
-- name: Inclure les tâches spécifiques à la distribution (RedHat/Rocky)
-  include_tasks: redhat.yaml
+- name: (Debian) Installer les paquets requis
+  apt:
+    name:
+      - git
+      - curl
+      - ca-certificates
+      - gnupg
+      - build-essential
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: packages
+
+- name: (Debian) Télécharger et exécuter le script NodeSource
+  shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_version }} | bash -"
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+  when: ansible_os_family == "Debian"
+  tags: nodejs
+
+- name: (Debian) Installer Node.js et npm
+  apt:
+    name: nodejs
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+  tags: nodejs
+
+# ====== REDHAT / ROCKY ======
+
+- name: (RedHat) Mettre à jour les paquets système
+  dnf:
+    name: '*'
+    state: latest
   when: ansible_os_family == "RedHat"
+  tags: packages
 
-- name: Inclure les tâches communes de déploiement
-  include_tasks: deploy.yaml
+- name: (RedHat) Installer les paquets requis
+  dnf:
+    name:
+      - git
+      - curl
+      - "@Development Tools"
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: packages
+
+- name: (RedHat) Télécharger et exécuter le script NodeSource
+  shell: "curl -fsSL https://rpm.nodesource.com/setup_{{ node_version }} | bash -"
+  args:
+    creates: /etc/yum.repos.d/nodesource-nodejs.repo
+  when: ansible_os_family == "RedHat"
+  tags: nodejs
+
+- name: (RedHat) Installer Node.js et npm
+  dnf:
+    name: nodejs
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: nodejs
+
+# ====== DÉPLOIEMENT DE L'APPLICATION (commun) ======
+
+- name: S'assurer que le répertoire de l'application existe
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+  tags: app
+
+- name: Cloner le dépôt quiz-ansible depuis GitLab
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_branch | default('main') }}"
+    force: yes
+  tags: app
+
+- name: Installer les dépendances npm
+  community.general.npm:
+    path: "{{ app_dir }}"
+  tags: app
+
+- name: Construire l'application (npm run build)
+  shell: npm run build
+  args:
+    chdir: "{{ app_dir }}"
+    creates: "{{ app_dir }}/dist"
+  tags: app
+
+- name: Installer serve globalement
+  community.general.npm:
+    name: serve
+    global: yes
+    state: present
+  tags: app
+
+- name: Arrêter une éventuelle instance serve précédente
+  shell: "pkill -f 'serve -s {{ app_dir }}/dist' || true"
+  changed_when: false
+  tags: service
+
+- name: Démarrer l'application avec serve (en arrière-plan)
+  shell: |
+    nohup serve -s {{ app_dir }}/dist -l {{ app_port }} > {{ app_dir }}/serve.log 2>&1 &
+  args:
+    chdir: "{{ app_dir }}"
+  tags: service
+
+- name: Afficher le statut du déploiement
+  debug:
+    msg:
+      - "Application quiz-ansible déployée avec succès"
+      - "Répertoire : {{ app_dir }}"
+      - "Port : {{ app_port }}"
+      - "URL : http://{{ ansible_default_ipv4.address | default('localhost') }}:{{ app_port }}"
+  tags: always
